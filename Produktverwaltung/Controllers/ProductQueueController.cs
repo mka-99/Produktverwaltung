@@ -1,23 +1,25 @@
-﻿using Azure.Storage.Queues;
+﻿#nullable disable
+using System.Configuration;
+using System.Drawing;
+using System.Text.Json;
+using Azure.Storage.Queues;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using Produktverwaltung.Helper;
 using Produktverwaltung.Models;
 using Produktverwaltung.Services;
-using System.Drawing;
 
 namespace Produktverwaltung.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductsController : ControllerBase
+    public class ProductQueueController : ControllerBase
     {
         private readonly ProductContext _context;
         private readonly IConfiguration _configuration;
         private readonly ILogger<ProductsController> _logger;
 
-        public ProductsController(
+        public ProductQueueController(
             ProductContext context,
             ILogger<ProductsController> logger,
             IConfiguration configuration)
@@ -27,20 +29,18 @@ namespace Produktverwaltung.Controllers
             _configuration = configuration;
         }
 
-        // GET: api/Products
+        // GET: api/ProductQueue
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+        public async Task<ActionResult<IEnumerable<Product>>> GetTodoItems()
         {
             return await _context.TodoItems.ToListAsync();
         }
 
-        // GET: api/Products/5
+        // GET: api/ProductQueue/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(long id)
         {
             var product = await _context.TodoItems.FindAsync(id);
-
-            _logger.LogInformation($"...searching for {id}");
 
             if (product == null)
             {
@@ -50,53 +50,45 @@ namespace Produktverwaltung.Controllers
             return product;
         }
 
-        // PUT: api/Products/5
+        // PUT: api/ProductQueue/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutProduct(long id, Product product)
         {
-            _logger.LogInformation($"...searching for {id}");
-
             if (id != product.Id)
             {
                 return BadRequest();
             }
 
-            var product1 = await _context.TodoItems.FindAsync(id);
-            if (product1 == null)
-            {
-                return NotFound();
-            }
-
-            product1.Name = product.Name;
-            product1.Price = product.Price;
+            _context.Entry(product).State = EntityState.Modified;
 
             try
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException) when (!ProductExists(id))
+            catch (DbUpdateConcurrencyException)
             {
-                return NotFound();
+                if (!ProductExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
             }
 
             return NoContent();
         }
 
-        // POST: api/Products
+        // POST: api/ProductQueue
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<Product>> PostProduct(Product product)
         {
-
-
             _context.TodoItems.Add(product);
-            product.UniqueIdentifier = product.Id + "_" + _configuration["Suffix"];
-
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"saved entry: {product.Id}");
-            _logger.LogInformation($"Bezeichnung: {product.UniqueIdentifier}");
 
             //dummy bitmap
             Bitmap img = new Bitmap(1, 1);
@@ -118,22 +110,22 @@ namespace Produktverwaltung.Controllers
             // draw the text in black
             drawing.DrawString(product.Name, f, Brushes.Black, 0, 0);
 
-            img.Save(@$".\{product.Name}.png");
+            img.Save(@$".\{product.Name}.jpg");
             drawing.Save();
-            //product.filename = product.Name + ".png";
 
             BlobService blobService = new BlobService(_configuration);
-            blobService.UploadDataToBlobContainer(Environment.CurrentDirectory, product.Name, "imageblob");
 
             QueueService queueService = new QueueService(_configuration);
+
+            blobService.UploadDataToBlobContainer(Environment.CurrentDirectory, product.Name, "imageblob");
             queueService.CreateQueue("productqueue");
             queueService.InsertMessage("productqueue", Newtonsoft.Json.JsonConvert.SerializeObject(product));
+        
 
-            //return CreatedAtAction("GetProduct", new { id = product.Id }, product);
-            return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
+            return CreatedAtAction("GetProduct", new { id = product.Id }, product);
         }
 
-        // DELETE: api/Products/5
+        // DELETE: api/ProductQueue/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(long id)
         {
@@ -146,8 +138,6 @@ namespace Produktverwaltung.Controllers
             _context.TodoItems.Remove(product);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"...searching for {id}");
-
             return NoContent();
         }
 
@@ -155,15 +145,5 @@ namespace Produktverwaltung.Controllers
         {
             return _context.TodoItems.Any(e => e.Id == id);
         }
-
-        private static Product ItemToDTO(Product product) =>
-    new Product
-    {
-        Id = product.Id,
-        Name = product.Name,
-        Price = product.Price,
-        UniqueIdentifier = product.UniqueIdentifier,
-        //filename = product.filename,
-    };
     }
 }
