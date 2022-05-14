@@ -98,36 +98,6 @@ namespace Produktverwaltung.Controllers
             _logger.LogInformation($"saved entry: {product.Id}");
             _logger.LogInformation($"Bezeichnung: {product.UniqueIdentifier}");
 
-            //dummy bitmap
-            Bitmap img = new Bitmap(1, 1);
-            Graphics drawing = Graphics.FromImage(img);
-
-            // The font for our text
-            Font f = new Font("Arial", 14);
-
-            // work out how big the text will be when drawn as an image
-            SizeF size = drawing.MeasureString(product.Name, f);
-
-            // create a new Bitmap of the required size
-            img = new Bitmap((int)Math.Ceiling(size.Width), (int)Math.Ceiling(size.Height));
-            drawing = Graphics.FromImage(img);
-
-            // give it a white background
-            drawing.Clear(Color.White);
-
-            // draw the text in black
-            drawing.DrawString(product.Name, f, Brushes.Black, 0, 0);
-
-            img.Save(@$".\{product.Name}.png");
-            drawing.Save();
-            //product.filename = product.Name + ".png";
-
-            BlobService blobService = new BlobService(_configuration);
-            blobService.UploadDataToBlobContainer(Environment.CurrentDirectory, product.Name, "imageblob");
-
-            QueueService queueService = new QueueService(_configuration);
-            queueService.CreateQueue("productqueue");
-            queueService.InsertMessage("productqueue", Newtonsoft.Json.JsonConvert.SerializeObject(product));
 
             //return CreatedAtAction("GetProduct", new { id = product.Id }, product);
             return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
@@ -163,7 +133,7 @@ namespace Produktverwaltung.Controllers
         Name = product.Name,
         Price = product.Price,
         UniqueIdentifier = product.UniqueIdentifier,
-        //filename = product.filename,
+        filename = product.filename,
     };
     }
 }

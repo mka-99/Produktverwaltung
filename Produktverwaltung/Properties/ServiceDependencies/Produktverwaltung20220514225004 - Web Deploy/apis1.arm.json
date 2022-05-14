@@ -4,7 +4,7 @@
   "parameters": {
     "resourceGroupName": {
       "type": "string",
-      "defaultValue": "Produktverwaltung",
+      "defaultValue": "Produktverwaltung20220514225004ResourceGroup",
       "metadata": {
         "_parameterType": "resourceGroup",
         "description": "Name of the resource group for the resource. It is recommended to put resources under same resource group for better tracking."
@@ -49,17 +49,17 @@
           "contentVersion": "1.0.0.0",
           "resources": [
             {
-              "name": "Produktverwaltungapi",
+              "name": "Produktverwaltungapi2435",
               "type": "Microsoft.ApiManagement/service",
               "location": "[parameters('resourceLocation')]",
               "properties": {
-                "publisherEmail": "meli.hu1234@outlook.com",
-                "publisherName": "meli.hu1234@outlook.com",
+                "publisherEmail": "s49504@edu.campus02.at",
+                "publisherName": "Kaufmann Michael",
                 "notificationSenderEmail": "apimgmt-noreply@mail.windowsazure.com",
                 "hostnameConfigurations": [
                   {
                     "type": "Proxy",
-                    "hostName": "produktverwaltungapi.azure-api.net",
+                    "hostName": "produktverwaltungapi2435.azure-api.net",
                     "encodedCertificate": null,
                     "keyVaultId": null,
                     "certificatePassword": null,
@@ -94,13 +94,13 @@
             },
             {
               "type": "Microsoft.ApiManagement/service/apis",
-              "name": "Produktverwaltungapi/Produktverwaltung",
+              "name": "Produktverwaltungapi2435/Produktverwaltung",
               "properties": {
-                "displayName": "Produktverwaltung, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+                "displayName": "Produktverwaltung",
                 "apiRevision": "1",
                 "description": null,
                 "subscriptionRequired": true,
-                "serviceUrl": "https://prodvw-mka99.azurewebsites.net:80/",
+                "serviceUrl": null,
                 "path": "",
                 "protocols": [
                   "https"
@@ -117,7 +117,7 @@
               },
               "apiVersion": "2019-12-01",
               "dependsOn": [
-                "Produktverwaltungapi"
+                "Produktverwaltungapi2435"
               ]
             }
           ]

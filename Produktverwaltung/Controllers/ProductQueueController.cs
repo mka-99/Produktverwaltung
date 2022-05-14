@@ -87,8 +87,8 @@ namespace Produktverwaltung.Controllers
         public async Task<ActionResult<Product>> PostProduct(Product product)
         {
             _context.TodoItems.Add(product);
+            product.UniqueIdentifier = product.Id + "_" + _configuration["Suffix"];
             await _context.SaveChangesAsync();
-
 
             //dummy bitmap
             Bitmap img = new Bitmap(1, 1);
@@ -110,17 +110,19 @@ namespace Produktverwaltung.Controllers
             // draw the text in black
             drawing.DrawString(product.Name, f, Brushes.Black, 0, 0);
 
-            img.Save(@$".\{product.Name}.jpg");
+            img.Save(@$".\{product.Name}.png");
             drawing.Save();
 
+
             BlobService blobService = new BlobService(_configuration);
+            blobService.UploadDataToBlobContainer(Environment.CurrentDirectory, product.Name, "imageblob");
+
+            product.filename = product.Name + ".png";
 
             QueueService queueService = new QueueService(_configuration);
-
-            blobService.UploadDataToBlobContainer(Environment.CurrentDirectory, product.Name, "imageblob");
             queueService.CreateQueue("productqueue");
             queueService.InsertMessage("productqueue", Newtonsoft.Json.JsonConvert.SerializeObject(product));
-        
+
 
             return CreatedAtAction("GetProduct", new { id = product.Id }, product);
         }
